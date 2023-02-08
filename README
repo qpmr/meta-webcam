@@ -1,0 +1,33 @@
+This README file contains information on the contents of the meta-webcam layer.
+
+Please see the corresponding sections below for details.
+
+Dependencies
+============
+
+  URI: https://github.com/linux-sunxi/meta-sunxi.git
+  branch: kirkstone
+
+Patches
+=======
+
+Please submit any patches against the meta-webcam layer to the the maintainer:
+
+Maintainer: Ilja Byckevich <iljabyckevich@gmail.co>
+
+Table of Contents
+=================
+
+  I. Adding the meta-webcam layer to your build
+ II. Misc
+
+
+I. Adding the meta-webcam layer to your build
+=================================================
+
+Run 'bitbake-layers add-layer meta-webcam'
+
+II. Misc
+========
+
+Test project for the pine64+ board

@@ -1,0 +1,127 @@
+From c54e4c612781b183d2d80a4177e0b4da3d27cfc5 Mon Sep 17 00:00:00 2001
+From: Ilja Byckevich <iljabyckevich@gmail.com>
+Date: Wed, 8 Feb 2023 18:24:42 +0300
+Subject: [PATCH] Add ov2640 to the dts
+
+---
+ .../dts/allwinner/sun50i-a64-pine64-plus.dts  | 72 ++++++++++++++++++-
+ drivers/media/i2c/Kconfig                     |  1 +
+ drivers/media/i2c/ov2640.c                    |  3 +
+ 3 files changed, 75 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64-plus.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64-plus.dts
+index b54099b65..847533c66 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64-plus.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-pine64-plus.dts
+@@ -7,7 +7,43 @@ / {
+ 	model = "Pine64+";
+ 	compatible = "pine64,pine64-plus", "allwinner,sun50i-a64";
+ 
+-	/* TODO: Camera, touchscreen, etc. */
++	i2c {
++		compatible = "i2c-gpio";
++		sda-gpios = <&pio 4 13 GPIO_ACTIVE_HIGH>;
++		scl-gpios = <&pio 4 12 GPIO_ACTIVE_HIGH>;
++		i2c-gpio,delay-us = <5>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ov2640: camera@30 {
++			compatible = "ovti,ov2640";
++			reg = <0x30>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&csi_mclk_pin>;
++			clocks = <&ccu CLK_CSI_MCLK>;
++			clock-names = "xvclk";
++
++			AVDD-supply = <&reg_aldo1>;
++			DOVDD-supply = <&reg_dldo3>;
++			DVDD-supply = <&reg_eldo3>;
++
++			resetb-gpios = <&pio 4 14 GPIO_ACTIVE_LOW>; /* CSI-RST-R: PE14 */
++			pwdn-gpios = <&pio 4 15 GPIO_ACTIVE_HIGH>; /* CSI-STBY-R: PE15 */
++
++			port {
++				ov2640_ep: endpoint {
++					remote-endpoint = <&csi_ep>;
++					bus-width = <8>;
++					hsync-active = <1>; /* Active high */
++					vsync-active = <0>; /* Active low */
++					data-active = <1>;  /* Active high */
++					pclk-sample = <1>;  /* Rising */
++				};
++			};
++		};
++	};
++
++	/* TODO: touchscreen, etc. */
+ };
+ 
+ &emac {
+@@ -33,3 +69,37 @@ &reg_dc1sw {
+ 	 */
+ 	regulator-enable-ramp-delay = <100000>;
+ };
++
++&reg_aldo1 {
++	regulator-always-on;
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	regulator-name = "avdd-csi";
++};
++
++&reg_dldo3 {
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	regulator-name = "dovdd-csi";
++};
++
++&reg_eldo3 {
++	regulator-min-microvolt = <1800000>;
++	regulator-max-microvolt = <1800000>;
++	regulator-name = "dvdd-csi";
++};
++
++&csi {
++	status = "okay";
++
++	port {
++		csi_ep: endpoint {
++			remote-endpoint = <&ov2640_ep>;
++			bus-width = <8>;
++			hsync-active = <1>; /* Active high */
++			vsync-active = <0>; /* Active low */
++			data-active = <1>;  /* Active high */
++			pclk-sample = <1>;  /* Rising */
++		};
++	};
++};
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index 6157e73ee..c656078d3 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -899,6 +899,7 @@ config VIDEO_OV02A10
+ config VIDEO_OV2640
+ 	tristate "OmniVision OV2640 sensor support"
+ 	depends on VIDEO_V4L2 && I2C
++	select V4L2_FWNODE
+ 	help
+ 	  This is a Video4Linux2 sensor driver for the OmniVision
+ 	  OV2640 camera.
+diff --git a/drivers/media/i2c/ov2640.c b/drivers/media/i2c/ov2640.c
+index 4b75da55b..394dd5976 100644
+--- a/drivers/media/i2c/ov2640.c
++++ b/drivers/media/i2c/ov2640.c
+@@ -1216,6 +1216,9 @@ static int ov2640_probe(struct i2c_client *client)
+ 	}
+ 
+ 	ret = ov2640_probe_dt(client, priv);
++	//FIXME
++	ret = 0;
++
+ 	if (ret)
+ 		goto err_clk;
+ 
+-- 
+2.34.1
+
